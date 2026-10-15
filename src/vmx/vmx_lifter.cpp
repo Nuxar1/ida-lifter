@@ -310,10 +310,19 @@ static merror_t handle_vmread(codegen_t &cdg) {
             return MERR_INSN;
         }
 
+        // Produce an unknown runtime value.
+		mreg_t value = cdg.mba->alloc_kreg(uint_type.get_size());
+
         VMXIntrinsic icall(&cdg, "__vmread");
-        icall.add_argument_reg(addr, get_ptr_type());
         icall.add_argument_reg(encoding_reg, uint_type);
-        icall.emit_void();
+        icall.set_return_reg(value, uint_type);
+        icall.emit();
+
+        // Explicitly write the value to [addr].
+        // Emit an m_stx microinstruction here, with the correct
+        // address, value, and operand width for your SDK.
+        //emit_store(cdg, addr, value, uint_type.get_size());
+		cdg.store_operand(0, mop_t(value, (int)uint_type.get_size()));
     }
     return MERR_OK;
 }
