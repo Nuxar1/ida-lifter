@@ -303,14 +303,13 @@ static merror_t handle_vmread(codegen_t &cdg) {
         icall.set_return_reg(dst_reg, uint_type);
         icall.emit();
     } else {
-        // vmread [mem], encoding -> __vmread_mem(&dest, encoding)
+        // vmread [mem], encoding -> [mem] = __vmread_mem(encoding)
         mreg_t addr = load_mem_address(cdg, 0);
         if (addr == mr_none) {
             VMX_ERROR_LOG("%a: Failed to load address for vmread", insn.ea);
             return MERR_INSN;
         }
 
-        // Produce an unknown runtime value.
 		mreg_t value = cdg.mba->alloc_kreg(uint_type.get_size());
 
         VMXIntrinsic icall(&cdg, "__vmread");
@@ -318,10 +317,6 @@ static merror_t handle_vmread(codegen_t &cdg) {
         icall.set_return_reg(value, uint_type);
         icall.emit();
 
-        // Explicitly write the value to [addr].
-        // Emit an m_stx microinstruction here, with the correct
-        // address, value, and operand width for your SDK.
-        //emit_store(cdg, addr, value, uint_type.get_size());
 		cdg.store_operand(0, mop_t(value, (int)uint_type.get_size()));
     }
     return MERR_OK;
